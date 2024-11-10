@@ -23,5 +23,7 @@ app.listen(port, () => {
 
 // Routes
 const userRouter = require('./routes/users');
-console.log(userRouter)
 app.use('/users', userRouter);
+
+const expenseRouter = require('./routes/expenses');
+app.use('/expenses', expenseRouter);

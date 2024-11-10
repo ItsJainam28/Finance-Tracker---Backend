@@ -4,17 +4,19 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
-const authMiddleware = require('../Middleware/auth');
+const authMiddleware = require('../middleware/auth');
 
 // Signup route
 router.post('/signup', 
 [   // Validation Middlewares
-    check('firstname', 'Name must be at least 5 characters long').isLength({ min: 2 }),
-    check('firstname', 'Name must be at least 5 characters long').isLength({ min: 2 }),
+    check('firstname', 'Name must be at least 2 characters long').isLength({ min: 2 }),
+    check('lastname', 'Name must be at least 2 characters long').isLength({ min: 2 }),
     check('email', 'Please enter a valid email').isEmail(),
     check('password', 'Password must be at least 5 characters, with at least one uppercase, lowercase, number, and special character').matches(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{5,}$/)
 ],async (req, res) => {
     try{
+        console.log(req.body);
+
         // Check for validation errors
         const errors = validationResult(req);
 
@@ -33,7 +35,9 @@ router.post('/signup',
         });
         //Save the user and generate a token
         await user.save();
+        console.log("ERror after token not sent")
         const token = jwt.sign({_id: user._id}, process.env.JWT_SECRET);
+        console.log("Error after token sent")
         res.status(201).send({token});
     }catch(e){
         if (e.code === 11000) { // Duplicate Key Error
