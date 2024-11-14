@@ -97,12 +97,22 @@ router.get('/expensesByCategory/:category', authMiddleware, async (req, res) => 
 // Get expenses by date
 router.get('/expensesByDate/:date', authMiddleware, async (req, res) => {
     try {
-        const expenses = await Expense.find({ userId: req.user._id, date: req.params.date });
+        const date = new Date(req.params.date);
+        const startOfDay = new Date(date.setUTCHours(0, 0, 0, 0));
+        const endOfDay = new Date(date.setUTCHours(23, 59, 59, 999));
+
+        const expenses = await Expense.find({
+            userId: req.user._id,
+            date: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            }
+        });
+
         res.status(200).send(expenses);
     } catch (error) {
         res.status(500).send(error);
     }
 });
-
 
 module.exports = router;
