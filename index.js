@@ -27,3 +27,10 @@ app.use('/users', userRouter);
 
 const expenseRouter = require('./routes/expenses');
 app.use('/expenses', expenseRouter);
+
+const budgetRouter = require('./routes/budgets');
+app.use('/budgets', budgetRouter);
+
+const recurringExpenseRouter = require('./routes/recurringexpense');
+app.use('/recurringexpenses', recurringExpenseRouter);
+
