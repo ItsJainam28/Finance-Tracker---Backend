@@ -3,16 +3,20 @@ const router = express.Router();
 const RecurringExpense = require('../models/recurringexpense');
 const authMiddleware = require('../middleware/auth');
 const { default: mongoose } = require('mongoose');
-
+const { makeExpense } = require('../utils/recurring_expense_utils');
+const Expense = require('../models/expense');
 // Add a recurring expense
 
 router.post('/addRecurringExpense', authMiddleware, async (req, res) => {
     try {
         const temp_recurringexpense = req.body;
+        temp_recurringexpense.name = req.body.name;
         temp_recurringexpense.userId = req.user._id;
         temp_recurringexpense.category = new mongoose.Types.ObjectId(req.body.category);
         temp_recurringexpense.amount = parseFloat(req.body.amount);
         temp_recurringexpense.startDate = new Date(req.body.startDate);
+        temp_recurringexpense.frequency = req.body.frequency;
+        temp_recurringexpense.nextExpenseDate = new Date(req.body.startDate);
         if(req.body.endDate === ''){
             temp_recurringexpense.endDate = null;
         } else{
@@ -25,6 +29,13 @@ router.post('/addRecurringExpense', authMiddleware, async (req, res) => {
         }
         const recurringexpense = new RecurringExpense(temp_recurringexpense);
         await recurringexpense.save();
+        
+        const newExpense = makeExpense(recurringexpense, Expense);
+        if(newExpense){
+            res.status(201).send({recurringexpense, newExpense});
+            return;
+        }
+
         res.status(201).send(recurringexpense);
     } catch (error) {
         console.log(error);

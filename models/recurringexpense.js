@@ -13,6 +13,10 @@ const mongoose = require('mongoose');
 //   }
 
 const recurringExpenseSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -42,6 +46,10 @@ const recurringExpenseSchema = new mongoose.Schema({
     },
     isActive: {
         type: Boolean,
+        required: true
+    },
+    nextExpenseDate: {
+        type: Date,
         required: true
     }
 });
