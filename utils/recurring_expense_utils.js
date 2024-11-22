@@ -64,13 +64,13 @@ function calculateNextExpenseDate(startDate, frequency,  lastExpenseDate, curren
 // const nextDate = calculateNextExpenseDate(startDate, frequency, currentDate, lastExpenseDate);
 // console.log('Next Expense Date:', nextDate); // Output should be 2024-02-29
 
-function makeExpense(recurringExpense , Expense){
+async function makeExpense(recurringExpense , Expense){
     if(!recurringExpense.isActive){
         return;
     }
   
 //Check if the next expense date is same as the startDate and is in past than current date - all should happen in utc - the dates in the recurringExpense are already in UTC
-    if(moment(recurringExpense.nextExpenseDate).utc().isSame(moment(recurringExpense.startDate).utc()) && moment(recurringExpense.nextExpenseDate).utc().isBefore(moment().utc())){
+    while(moment(recurringExpense.nextExpenseDate).utc().isBefore(moment().utc())){
        
         const newExpense = new Expense({
             amount: recurringExpense.amount,
@@ -79,11 +79,9 @@ function makeExpense(recurringExpense , Expense){
             category: recurringExpense.category,
             isReccuring: true
         });
-        newExpense.save();
+        await newExpense.save();
         recurringExpense.nextExpenseDate = calculateNextExpenseDate( recurringExpense.startDate,  recurringExpense.frequency, recurringExpense.nextExpenseDate);
-        recurringExpense.save();
-
-        return newExpense;
+        await recurringExpense.save();  
     }
 
 //For noraml cases where the nextExpense Date is going to be same as the current date
