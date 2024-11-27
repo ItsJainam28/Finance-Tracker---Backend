@@ -4,7 +4,7 @@ const RecurringExpense = require('../models/recurringexpense');
 const authMiddleware = require('../middleware/auth');
 const { default: mongoose } = require('mongoose');
 const { makeExpense } = require('../utils/recurring_expense_utils');
-const Expense = require('../models/expense');
+// const Expense = require('../models/expense');
 // Add a recurring expense
 
 router.post('/addRecurringExpense', authMiddleware, async (req, res) => {
@@ -30,11 +30,11 @@ router.post('/addRecurringExpense', authMiddleware, async (req, res) => {
         const recurringexpense = new RecurringExpense(temp_recurringexpense);
         await recurringexpense.save();
         
-        const newExpense = makeExpense(recurringexpense, Expense);
-        if(newExpense){
-            res.status(201).send({recurringexpense, newExpense});
-            return;
-        }
+        // const newExpense = makeExpense(recurringexpense);
+        // if(newExpense){
+        //     res.status(201).send({recurringexpense, newExpense});
+        //     return;
+        // }
 
         res.status(201).send(recurringexpense);
     } catch (error) {

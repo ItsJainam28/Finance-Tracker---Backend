@@ -1,5 +1,6 @@
 const moment = require('moment');
-
+const  RecurringExpense  = require('../models/recurringexpense');
+const  Expense  = require('../models/expense');
 /**
  * Calculate the next expense date.
  * @param {Date} startDate - The start date of the recurring expense.
@@ -64,44 +65,73 @@ function calculateNextExpenseDate(startDate, frequency,  lastExpenseDate, curren
 // const nextDate = calculateNextExpenseDate(startDate, frequency, currentDate, lastExpenseDate);
 // console.log('Next Expense Date:', nextDate); // Output should be 2024-02-29
 
-async function makeExpense(recurringExpense , Expense){
-    if(!recurringExpense.isActive){
+async function makeExpense(recurringExpense) {
+    try {
+        if (!recurringExpense.isActive) {
+            return;
+        }
+
+        // Process all missed expenses
+        while (moment(recurringExpense.nextExpenseDate).utc().isBefore(moment().utc())) {
+            const newExpense = new Expense({
+                amount: recurringExpense.amount,
+                date: recurringExpense.nextExpenseDate,
+                userId: recurringExpense.userId,
+                category: recurringExpense.category,
+                isReccuring: true
+            });
+            await newExpense.save();
+            
+            recurringExpense.nextExpenseDate = calculateNextExpenseDate(
+                recurringExpense.startDate, 
+                recurringExpense.frequency, 
+                recurringExpense.nextExpenseDate
+            );
+            await recurringExpense.save();  
+        }
+
+        // Process current day's expense
+        if (moment(recurringExpense.nextExpenseDate).utc().isSame(moment().utc())) {
+            const newExpense = new Expense({
+                amount: recurringExpense.amount,
+                date: recurringExpense.nextExpenseDate,
+                userId: recurringExpense.userId,
+                category: recurringExpense.category,
+                isReccuring: true
+            });
+            await newExpense.save();
+            
+            recurringExpense.nextExpenseDate = calculateNextExpenseDate(
+                recurringExpense.startDate, 
+                recurringExpense.frequency, 
+                recurringExpense.nextExpenseDate
+            );
+            await recurringExpense.save();
+
+            return newExpense;
+        }
+
         return;
+    } catch (error) {
+        console.error('Error processing recurring expense:', error);
+        throw error;
     }
-  
-//Check if the next expense date is same as the startDate and is in past than current date - all should happen in utc - the dates in the recurringExpense are already in UTC
-    while(moment(recurringExpense.nextExpenseDate).utc().isBefore(moment().utc())){
-       
-        const newExpense = new Expense({
-            amount: recurringExpense.amount,
-            date: recurringExpense.nextExpenseDate,
-            userId: recurringExpense.userId,
-            category: recurringExpense.category,
-            isReccuring: true
-        });
-        await newExpense.save();
-        recurringExpense.nextExpenseDate = calculateNextExpenseDate( recurringExpense.startDate,  recurringExpense.frequency, recurringExpense.nextExpenseDate);
-        await recurringExpense.save();  
-    }
-
-//For noraml cases where the nextExpense Date is going to be same as the current date
-    if(moment(recurringExpense.nextExpenseDate).utc().isSame(moment().utc())){
-        const newExpense = new Expense({
-            amount: recurringExpense.amount,
-            date: recurringExpense.nextExpenseDate,
-            userId: recurringExpense.userId,
-            category: recurringExpense.category,
-            isRecurring: true
-        });
-        newExpense.save();
-        recurringExpense.nextExpenseDate = calculateNextExpenseDate( recurringExpense.startDate,  recurringExpense.frequency, recurringExpense.nextExpenseDate);
-        recurringExpense.save();
-
-        return newExpense;
-    }
-
-    return;
-
 }
 
-module.exports = { calculateNextExpenseDate, makeExpense };
+async function processRecurringPayments() {
+    try {
+      // Find all active recurring expenses
+      const recurringExpenses = await RecurringExpense.find({ isActive: true });
+  
+      for (const recurringExpense of recurringExpenses) {
+        await makeExpense(recurringExpense);
+      }
+  
+      console.log(`Processed recurring expenses at ${new Date().toISOString()}`);
+    } catch (error) {
+      console.error('Error processing recurring expenses:', error);
+    }
+  }
+
+module.exports = { calculateNextExpenseDate, makeExpense, processRecurringPayments };
+
